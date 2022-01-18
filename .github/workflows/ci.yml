@@ -1,0 +1,6 @@
+on: push
+jobs:
+  qa:
+    runs-on: hpc
+    steps:
+      - uses: actions/checkout@v2
