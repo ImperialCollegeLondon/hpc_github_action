@@ -1,0 +1,66 @@
+name: "Imperial College HPC Action"
+description: "Run a job on the Imperial College HPC system."
+inputs:
+  job-script-contents:
+    description: "Script contents to run"
+    required: true
+outputs:
+  job-id:
+    description: "ID of Submitted Job"
+    value: ${{ steps.submit.outputs.job-id }}
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        cat - > .commands.sh <<'EOF'
+        set -e
+        ${{ inputs.job-script-contents }}
+        EOF
+      shell: bash
+    - shell: bash
+      id: submit
+      run: |
+        echo "::set-output name=job-id::$(/opt/pbs/bin/qsub -N CI-JOB -o ${{ github.workspace }}/job-output -e ${{ github.workspace }}/job-output <<'EOF'
+        #!/bin/bash
+        #PBS -l walltime=0:31:0
+        #PBS -l select=1:ncpus=8:mem=96gb
+
+        cd $PBS_O_WORKDIR
+
+        echo "Running CI job on $(hostname)"
+        echo "Starting job at $(date)"
+
+        ~/anaconda3/bin/conda create --prefix ./.conda_env
+        source ~/anaconda3/bin/activate ./.conda_env
+        
+        bash .commands.sh
+        echo $? > exit_code
+
+        echo "Finishing job at $(date)"
+        EOF
+        )"
+    - shell: bash
+      run: |
+        echo "Job Queuing"
+        while /opt/pbs/bin/qstat -f ${{steps.submit.outputs.job-id}} | grep -q "job_state = Q"
+        do
+          sleep 10s
+        done
+    - run: |
+        echo "Job started running at $(date)"
+        while /opt/pbs/bin/qstat -f ${{steps.submit.outputs.job-id}} | grep -q "job_state = R"
+        do
+          sleep 10s
+        done
+      shell: bash
+    - run: cat ${{ github.workspace }}/job-output || true
+      shell: bash
+    - run: |
+        if [ -e ${{ github.workspace }}/exit_code ]
+        then
+          exit $(cat ${{ github.workspace }}/exit_code)
+        else
+          echo "No exit code recorded. Job may have terminated prematurely."
+          exit 1
+        fi
+      shell: bash

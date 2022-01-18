@@ -1,6 +1,30 @@
 on: push
 jobs:
-  qa:
+  ci:
     runs-on: hpc
     steps:
       - uses: actions/checkout@v2
+      - name: HPC Step
+        uses: imperialcollegelondon/hpc_github_action@main
+        with:
+          job-script-contents: |
+            # setup the environment
+            conda install -y python=3.9
+            git clone https://github.com/essex-lab/ProtoMS.git
+            pip install -r ProtoMS/requirements.txt
+            module load cmake/3.18.2 intel-suite/2020.2 mpi/intel-2019.6.166
+
+            # build the software
+            mkdir ProtoMS/build && cd ProtoMS/build
+            FC=ifort cmake ..
+            make -j 8
+            make install
+            cd ..
+
+            # run an MPI test workload
+            export PROTOMSHOME=$(pwd)
+            cd tutorial/gcmc
+            python $PROTOMSHOME/tools/make_gcmcbox.py -b 32.0 7.0 2.0 3.5 4.0 8.0 -o gcmc_box.pdb
+            python $PROTOMSHOME/protoms.py -s gcmc -sc protein_pms.pdb --gcmcbox gcmc_box.pdb --adams {-24..-17} --nequil 0 --nprod 100
+
+            mpirun -n 8 $PROTOMSHOME/protoms3 run_gcmc.cmd
