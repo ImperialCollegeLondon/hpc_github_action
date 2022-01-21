@@ -108,3 +108,5 @@ cluster. Only the latest `main` branch should be expected to work.
   interfering with other jobs, files in $EPHEMERAL should be placed in a
   dedicated sub-directory. Good practice is to use a random directory name e.g.
   `job_tmp=$(mktemp --directory --tmpdir="$EPHEMERAL")`.
+* Jobs executed using the action must queue before execution. Typical queue
+  times are a few minutes but this may be longer during periods of high usage.
