@@ -13,7 +13,7 @@ runs:
   steps:
     - run: |
         cat - > .commands.sh <<'EOF'
-        set -e
+        set -ex
         ${{ inputs.job-script-contents }}
         EOF
       shell: bash
