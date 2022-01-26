@@ -66,7 +66,7 @@ the runner must be enabled **by request** for each repository that uses it. The
 action has one required input argument `job-script-contents` that provides the
 commands to be run inside a batch job on the RCS cluster.
 
-Batch jobs run in a standard user environment on the cluster. This provides
+Batch jobs run in a dedicated user environment on the cluster. This provides
 access to the usual selection of modules and utilities. An empty Conda
 environment is created and activated for each job. Subsequent Conda commands can
 be used to install packages into the environment as required. In the example
@@ -83,7 +83,9 @@ cluster. Only the latest `main` branch should be expected to work.
 * This action is currently highly experimental and subject to change or
   withdrawal without notice.
 * As noted above, use of this action requires access to a specialised
-  self-hosted runner provided on request for individual repositories.
+  self-hosted runner provided on request for individual repositories. At time of
+  writing, access to the runner is not available from the College's enterprise
+  GitHub deployment (github.ic.ac.uk).
 * There are potential security risks to using this action. This action allows
   custom code execution from authorised repositories. It may be possible for
   other users of this action to access any files placed on the self-hosted
